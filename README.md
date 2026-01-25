@@ -2,14 +2,17 @@
 
 ## required packages
 
+```sh
 sudo apt install eza
 sudo apt install batcat
 sudo apt install bat
 sudo apt install fzf
 sudo apt install git-delta
+```
 
 ## recommended packages
 
+```sh
 sudo apt install pgbadger
 sudo apt install pg_activity/bullseye-backports
 sudo apt install sd
@@ -35,3 +38,4 @@ sudo apt install tldr
 sudo apt install pandoc
 sudo apt install httpie
 sudo apt install poppler-utils
+```
