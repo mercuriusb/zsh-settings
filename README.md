@@ -17,7 +17,6 @@ sudo apt install pgbadger
 sudo apt install pg_activity/bullseye-backports
 sudo apt install sd
 sudo apt install jql
-sudo apt install neovim
 sudo apt install dos2unix
 sudo apt install netstat
 sudo apt install net-tools
