@@ -4,6 +4,29 @@ autoload -U compinit; compinit
 source $ZSH/fzf-tab/fzf-tab.plugin.zsh
 source $ZSH/agnoster/agnoster.zsh-theme
 
+# --- ZSH Completions Setup ---
+ZSH_COMPLETIONS_DIR="$HOME/.zsh_cache"
+mkdir -p "$ZSH_COMPLETIONS_DIR"
+fpath=($ZSH_COMPLETIONS_DIR $fpath)
+
+# Completions werden nach 7 Tagen automatisch neu generiert
+_generate_completion() {
+  local tool=$1
+  local file="$ZSH_COMPLETIONS_DIR/_${tool}"
+  local max_age_days=7
+
+  # Tool vorhanden?
+  if ! command -v "$tool" &>/dev/null; then
+    return
+  fi
+
+  # Neu generieren wenn Datei fehlt oder zu alt
+  if [[ ! -f "$file" ]] || [[ $(find "$file" -mtime +${max_age_days} 2>/dev/null) ]]; then
+    echo "Generating completion for $tool..."
+    "${@:2}" > "$file" 2>/dev/null
+  fi
+}
+
 LOCAL_ZSH="$ZSH/local"
 
 if [ -d "$LOCAL_ZSH" ]; then
@@ -33,10 +56,6 @@ alias resticsnapshots='restic -r /restic snapshots'
 alias vi='vim'
 alias aliassearch="alias | grep "
 export EDITOR=/usr/bin/vim
-
-# grep by http status code
-alias grephttperror='grep "HTTP/1\.1\" [45]"'
-alias grephttpok='grep "HTTP/1\.1\" [23]"'
 
 # ls
 alias ll='eza -la --group-directories-first --time-style "+%Y-%m-%d %H:%M:%S"'
@@ -101,4 +120,12 @@ alias dcstatus='docker compose status'
 alias dockerrmimages='docker rmi "$(docker images -q)" --force'
 alias dcud='docker compose down && docker compose up -d && docker compose logs -f'
 
+# grep http
+alias grephttperror='grep "HTTP/1\.1\" [45]"'
+alias grephttpok='grep "HTTP/1\.1\" [23]"'
 
+autoload -Uz compinit && compinit
+alias zsh-completions-refresh="rm -f $HOME/.zsh_cache/_* && source ~/.zshrc"
+
+# Generated for envman. Do not edit.
+[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
