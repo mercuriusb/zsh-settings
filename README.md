@@ -11,8 +11,6 @@ A personal ZSH configuration with completions, aliases, and plugins.
 | `fzf` | `sudo apt install fzf` | `brew install fzf` |
 | `git-delta` | `sudo apt install git-delta` | `brew install git-delta` |
 
-> **Note:** On Debian/Ubuntu, `bat` may be packaged as `batcat`. The config aliases `bat` and `less` to `batcat` accordingly. On macOS via brew, the binary is simply `bat`.
-
 ## Recommended packages
 
 ### Shell & file utilities
