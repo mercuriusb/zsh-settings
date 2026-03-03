@@ -1,7 +1,5 @@
 export ZSH=~/.zsh
 
-autoload -U compinit; compinit
-source $ZSH/fzf-tab/fzf-tab.plugin.zsh
 source $ZSH/agnoster/agnoster.zsh-theme
 
 # --- ZSH Completions Setup ---
@@ -54,13 +52,13 @@ alias apt='sudo apt'
 alias zshreload='source ~/.zshrc'
 alias resticsnapshots='restic -r /restic snapshots'
 alias vi='vim'
-alias aliassearch="alias | grep "
+alias aliassearch='alias | grep '
 export EDITOR=/usr/bin/vim
 
 # ls
 alias ll='eza -la --group-directories-first --time-style "+%Y-%m-%d %H:%M:%S"'
 alias la='eza -a'
-alias l='eza -l --group-directories-first --time-style ":wq+%Y-%m-%d %H:%M:%S"'
+alias l='eza -l --group-directories-first --time-style "+%Y-%m-%d %H:%M:%S"'
 
 # less
 alias rless='/usr/bin/less'
@@ -84,14 +82,12 @@ alias grm="git rebase origin/master"
 alias gfetch="git fetch"
 alias gpull="git pull"
 alias gswitch="git switch"
-alias gcm="git commit"
 alias gclean="git clean -fdx"
 alias gstatus='git status'
 alias gchko='git checkout'
 alias gchkb='git checkout -b'
 alias gcm='git commit -m'
 alias gadd='git add .'
-alias gpl='git pull'
 alias gps='git push'
 alias glg='git log --oneline --graph --decorate --all'
 alias gdf='git diff'
@@ -124,8 +120,10 @@ alias dcud='docker compose down && docker compose up -d && docker compose logs -
 alias grephttperror='grep "HTTP/1\.1\" [45]"'
 alias grephttpok='grep "HTTP/1\.1\" [23]"'
 
-autoload -Uz compinit && compinit
 alias zsh-completions-refresh="rm -f $HOME/.zsh_cache/_* && source ~/.zshrc"
 
 # Generated for envman. Do not edit.
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
+
+autoload -Uz compinit && compinit
+source $ZSH/fzf-tab/fzf-tab.plugin.zsh
