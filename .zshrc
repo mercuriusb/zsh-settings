@@ -62,8 +62,12 @@ alias l='eza -l --group-directories-first --time-style "+%Y-%m-%d %H:%M:%S"'
 
 # less
 alias rless='/usr/bin/less'
-alias less='batcat --style="plain"'
-alias bat='batcat --style="plain"'
+if command -v batcat &>/dev/null; then
+  alias bat='batcat --style="plain"'
+  alias less='batcat --style="plain"'
+elif command -v bat &>/dev/null; then
+  alias less='bat --style="plain"'
+fi
 export BAT_THEME="Monokai Extended"
 
 
