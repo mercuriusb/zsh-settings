@@ -46,7 +46,6 @@ setopt HIST_REDUCE_BLANKS        # Remove superfluous blanks before recording en
 
 # misc
 alias sshcopyid='ssh-copy-id -i ~/.ssh/id_rsa.pub '
-alias pgactivity='pg_activity --username=dev -p 5432 -h localhost -d '
 alias opensslinfo='openssl x509 -text -noout -in '
 alias apt='sudo apt'
 alias zshreload='source ~/.zshrc'
