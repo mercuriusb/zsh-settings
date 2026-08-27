@@ -21,7 +21,21 @@ _generate_completion() {
   # Neu generieren wenn Datei fehlt oder zu alt
   if [[ ! -f "$file" ]] || [[ $(find "$file" -mtime +${max_age_days} 2>/dev/null) ]]; then
     echo "Generating completion for $tool..."
-    "${@:2}" > "$file" 2>/dev/null
+
+    # Erst in eine Temp-Datei schreiben und pruefen. Direkt nach "$file"
+    # umgeleitet wuerde ein fehlgeschlagener Aufruf eine leere Datei
+    # hinterlassen -- die gilt dann 7 Tage als gueltiger Cache und die
+    # Completion ist still kaputt.
+    # Punkt-Prefix: liegengebliebene Temp-Dateien wuerden sonst von
+    # compinit als Completion "_<name>" eingelesen -- der Cache-Ordner
+    # steht im fpath.
+    local tmp="$ZSH_COMPLETIONS_DIR/.tmp_${tool}.$$"
+    if "${@:2}" > "$tmp" 2>/dev/null && [[ -s "$tmp" ]]; then
+      mv -f "$tmp" "$file"
+    else
+      rm -f "$tmp"
+      print -u2 "  failed - keeping previous completion for $tool"
+    fi
   fi
 }
 
@@ -47,11 +61,11 @@ setopt HIST_REDUCE_BLANKS        # Remove superfluous blanks before recording en
 # misc
 alias sshcopyid='ssh-copy-id -i ~/.ssh/id_rsa.pub '
 alias opensslinfo='openssl x509 -text -noout -in '
-alias apt='sudo apt'
 alias zshreload='source ~/.zshrc'
+alias aliassearch='alias | grep '
 alias resticsnapshots='restic -r /restic snapshots'
 alias vi='vim'
-alias aliassearch='alias | grep '
+alias apt='sudo apt'
 export EDITOR=/usr/bin/vim
 
 # ls
@@ -77,24 +91,28 @@ alias rsync-update="rsync -avzu --progress -h"
 alias rsync-synchronize="rsync -avzu --delete --progress -h"
 
 # git
-alias gstash="git stash"
-alias gclone="git clone"
-alias grst="git restore"
-alias gmm="git merge origin/master"
-alias grm="git rebase origin/master"
-alias gfetch="git fetch"
-alias gpull="git pull"
-alias gswitch="git switch"
-alias gclean="git clean -fdx"
-alias gstatus='git status'
-alias gchko='git checkout'
-alias gchkb='git checkout -b'
-alias gcm='git commit -m'
+alias gacp='git acp' # vorher git config --global alias.acp '!f() { git add . && git commit -m "$@" && git push; }; f'
 alias gadd='git add .'
-alias gps='git push'
-alias glg='git log --oneline --graph --decorate --all'
-alias gdf='git diff'
+alias gdelmergedbr="git branch --merged main | grep -v '^\*\|main' | xargs -r git branch -d"
+alias gdelmergedbrmaster="git branch --merged master | grep -v '^\*\|master' | xargs -r git branch -d"
+
+alias gchkb='git checkout -b'
+alias gchko='git checkout'
+alias gclean='git clean -fdx'
+alias gclone='git clone'
+alias gcm='git commit -m'
 alias gdc='git diff --cached'
+alias gdf='git diff'
+alias gfetch='git fetch'
+alias glg='git log --oneline --graph --decorate --all'
+alias gmerge='git merge'
+alias gps='git push'
+alias gpull='git pull'
+alias grebasem='git rebase origin/main'
+alias grst='git restore'
+alias gstash='git stash'
+alias gstatus='git status'
+alias gswitch='git switch'
 
 # maven
 alias mvncli="mvn clean install"
@@ -103,20 +121,20 @@ alias mvncl="mvn clean"
 alias mvni="mvn install"
 alias mvnverset='mvn versions:set -DprocessAllModules -DnewVersion='
 alias mvnvercom='mvn versions:commit'
-alias mvndepupdates=' mvn versions:display-dependency-updates:'
+alias mvndepupdates='mvn versions:display-dependency-updates'
 
 # docker
 alias dockallup='~/docker/bin/all up'
 alias dockalldown='~/docker/bin/all down'
-alias dockrmorphans='docker rmi $(docker images -f dangling=true -q)'
+alias dockrmorphans='docker image prune -f'   # war: docker rmi $(...) -- scheiterte ohne dangling images
 alias dcup='docker compose up'
 alias dcupd='docker compose up -d'
 alias dcdown='docker compose down'
 alias dcps='docker compose ps'
 alias dclog='docker compose logs'
 alias dctail='docker compose logs -f'
-alias dcstatus='docker compose status'
-alias dockerrmimages='docker rmi "$(docker images -q)" --force'
+alias dcstatus='docker compose ls'            # 'compose status' gibt es nicht; ps steckt schon in dcps
+alias dockerrmimages='docker rmi --force $(docker images -q)'
 alias dcud='docker compose down && docker compose up -d && docker compose logs -f'
 
 # grep http
@@ -129,4 +147,41 @@ alias zsh-completions-refresh="rm -f $HOME/.zsh_cache/_* && source ~/.zshrc"
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
 autoload -Uz compinit && compinit
+
+# --- fzf-tab ---
+# Die Konfiguration steht bewusst hier und nicht in
+# .zsh/fzf-tab/fzf-tab.plugin.zsh: dort waere sie in einem Vendor-Ordner
+# versteckt und beim Neukopieren des Plugins verloren.
+
+# Dateifarben fuer die Kandidatenliste. Ohne LS_COLORS bleibt list-colors
+# unten leer, fzf-tab ueberspringt dann -ftb-colorize komplett und die
+# Liste ist einfarbig -- waehrend die eza-Vorschau daneben bunt ist.
+# Achtung: GNU-Standardpalette, passt nicht zum Dracula-Theme in
+# .zsh/eza/theme.yml. Fuer gleiche Farben LS_COLORS von Hand setzen.
+(( $+commands[dircolors] )) && eval "$(dircolors -b)"
+
+# disable sort when completing `git checkout`
+zstyle ':completion:*:git-checkout:*' sort false
+# set descriptions format to enable group support
+# NOTE: don't use escape sequences (like '%F{red}%d%f') here, fzf-tab will ignore them
+zstyle ':completion:*:descriptions' format '[%d]'
+# set list-colors to enable filename colorizing
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+# force zsh not to show completion menu, which allows fzf-tab to capture the unambiguous prefix
+zstyle ':completion:*' menu no
+# preview directory's content with eza when completing cd
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
+# Tab akzeptiert direkt. Ohne Farb-Flags -- der README-Beispielblock
+# setzte hier --color=fg:1,fg+:2 (rot mit gruener Auswahl), das war nur
+# eine Demo. So nutzt fzf seine Standardfarben.
+zstyle ':fzf-tab:*' fzf-flags --bind=tab:accept
+# To make fzf-tab follow FZF_DEFAULT_OPTS.
+# NOTE: This may lead to unexpected behavior since some flags break this plugin. See Aloxaf/fzf-tab#455.
+zstyle ':fzf-tab:*' use-fzf-default-opts yes
+# switch group using `<` and `>`
+zstyle ':fzf-tab:*' switch-group '<' '>'
+# Completion im tmux-Popup; ausserhalb von tmux faellt ftb-tmux-popup
+# selbsttaetig auf normales fzf zurueck
+zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
+
 source $ZSH/fzf-tab/fzf-tab.plugin.zsh
