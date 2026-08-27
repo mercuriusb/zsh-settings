@@ -25,11 +25,28 @@ cd "$(dirname "$0")"
 ARCHIVE="config.tgz"
 SOURCES=(.zshrc .zsh .config)
 
-# GNU tar only -- bsdtar (macOS) has no --sort, and without it the
-# archive would not be reproducible. Fail loudly instead of writing
-# something that churns on every commit.
-if ! tar --version 2>/dev/null | head -1 | grep -q "GNU tar"; then
-    echo "pack-config: needs GNU tar (macOS: brew install gnu-tar, then use gtar)" >&2
+# GNU tar only -- bsdtar, which is "tar" on macOS, has no --sort, and
+# without it the archive is not reproducible. Homebrew installs GNU tar
+# as "gtar": /opt/homebrew on Apple Silicon, /usr/local on Intel.
+# Each candidate is verified rather than assumed, because "gtar" could be
+# anything and macOS ships a "tar" that answers --version quite happily.
+TAR=""
+for candidate in "${TAR_BIN:-}" gtar /opt/homebrew/bin/gtar /usr/local/bin/gtar tar; do
+    [ -n "$candidate" ] || continue
+    command -v "$candidate" >/dev/null 2>&1 || continue
+    if "$candidate" --version 2>/dev/null | head -1 | grep -q "GNU tar"; then
+        TAR=$(command -v "$candidate")
+        break
+    fi
+done
+
+if [ -z "$TAR" ]; then
+    {
+        echo "pack-config: no GNU tar found."
+        echo "  Linux: install the 'tar' package."
+        echo "  macOS: brew install gnu-tar   (installs it as gtar)"
+        echo "  Or point at it directly:  TAR_BIN=/path/to/gnu-tar $0"
+    } >&2
     exit 1
 fi
 
@@ -54,7 +71,7 @@ EXCLUDES=(
 # --mtime            one fixed timestamp instead of the real ones
 # --owner/--group    no local uid/gid baked in
 # gzip -n            no timestamp and no filename in the gzip header
-tar --sort=name \
+"$TAR" --sort=name \
     --mtime="UTC 2020-01-01" \
     --owner=0 --group=0 --numeric-owner \
     "${EXCLUDES[@]}" \
@@ -66,13 +83,13 @@ tar --sort=name \
 # under "set -o pipefail" that turns a successful check into a failure --
 # but only when tar has not already finished writing into the pipe buffer,
 # so it fails intermittently. A herestring has no pipeline at all.
-names=$(tar -tzf "$ARCHIVE")
-detail=$(tar -tvzf "$ARCHIVE")
+names=$("$TAR" -tzf "$ARCHIVE")
+detail=$("$TAR" -tvzf "$ARCHIVE")
 
 entries=$(wc -l <<< "$names" | tr -d ' ')
 size=$(du -h "$ARCHIVE" | cut -f1)
 
-echo "$ARCHIVE  --  $entries entries, $size"
+echo "$ARCHIVE  --  $entries entries, $size  (via $TAR)"
 
 # keyhelp.sh is useless without its executable bit; verify it survived
 if grep -q '^-rwx.*\.config/tmux/keyhelp\.sh$' <<< "$detail"; then

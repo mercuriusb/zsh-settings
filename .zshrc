@@ -184,4 +184,16 @@ zstyle ':fzf-tab:*' switch-group '<' '>'
 # selbsttaetig auf normales fzf zurueck
 zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
 
+# Das Popup bemisst seine Breite am laengsten Eintrag (comp_length + 5 in
+# lib/ftb-tmux-popup). Bei cd frisst die eza-Vorschau davon die Haelfte,
+# dann werden Verzeichnisnamen abgeschnitten. Untergrenze dagegen setzen --
+# der Wert wird auf die Fenstergroesse gedeckelt, zu gross schadet nicht.
+zstyle ':fzf-tab:*' popup-min-size 70 20
+
+# Vorschau schmaler, damit mehr Platz fuer die Namen bleibt.
+# Achtung: zstyle vereinigt Patterns nicht -- das spezifischere ersetzt das
+# allgemeinere komplett. --bind=tab:accept von oben muss deshalb mit rein,
+# sonst geht es ausgerechnet bei cd verloren.
+zstyle ':fzf-tab:complete:cd:*' fzf-flags --bind=tab:accept --preview-window=right,40%
+
 source $ZSH/fzf-tab/fzf-tab.plugin.zsh

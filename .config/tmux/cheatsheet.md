@@ -44,6 +44,7 @@ New panes always start in the current pane's directory.
 | `M-F1` | Search all bindings — **Enter runs it**, `Esc` cancels |
 
 Requires `~/.config/tmux/cheatsheet.md` and `~/.config/tmux/keyhelp.sh`.
+`M-?` falls back from `glow` to `bat` to `less`, so it works without extras.
 
 ---
 
@@ -153,14 +154,22 @@ tmux kill-server        # or inside tmux:  prefix r
 tmux
 ```
 
-`M-?` needs `glow` for rendering (`brew install glow` or your
-distribution's package), `M-F1` needs `fzf`. Check that zsh really lives
+`M-?` renders with `glow` if it is installed, otherwise `bat`/`batcat`,
+otherwise plain `less` — it always shows something. `M-F1` needs `fzf`
+and says so in the popup if it is missing. Check that zsh really lives
 at `/bin/zsh` with `command -v zsh` and adjust `default-shell` if not.
 
 **macOS:** the Option key has to send Meta, otherwise none of the Alt
 bindings work.
-iTerm2: Profiles → Keys → Left Option Key → `Esc+`.
-Terminal.app: Settings → Keyboard → "Use Option as Meta key".
+iTerm2: Profiles → Keys → General → Left Option key `Esc+`, and leave
+**Right Option key on `Normal`**.
+
+Set the left one only. On a German layout Option is what types
+`~ @ | \ { } [ ]`, so switching both removes them from the keyboard —
+`~` is Option+N then Space, `@` is Option+L, `|` is Option+7. The right
+Option key sits where AltGr does on a PC keyboard and keeps typing them.
+
+Terminal.app has no left/right split, so there it is all or nothing.
 
 ---
 

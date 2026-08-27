@@ -80,11 +80,12 @@ Paths in this repository mirror `$HOME` — `.zshrc` belongs at `~/.zshrc`,
 
 | Package | Needed for | apt (Debian/Ubuntu) | brew (macOS) |
 |---------|------------|---------------------|--------------|
-| `glow` | renders the cheat sheet in the `M-?` popup | not in the standard repos — see charm.sh/glow | `brew install glow` |
+| `glow` | prettier cheat sheet in the `M-?` popup | not in the standard repos — see charm.sh/glow | `brew install glow` |
 | `lazygit` | the `prefix g` popup | not in the standard repos — see the project's releases | `brew install lazygit` |
 
-> Without `glow` the `M-?` popup stays empty. `tmux.conf` carries commented
-> fallbacks using `bat` or `less` right next to that binding.
+> `M-?` picks its viewer at runtime: `glow`, else `bat`/`batcat`, else `less`.
+> So the popup always shows something — glow only makes it nicer. `lazygit`
+> has no fallback; without it `prefix g` opens an empty popup.
 
 ### Git
 
@@ -139,10 +140,23 @@ Rebuild it after changing any of those files:
 ./pack-config.sh
 ```
 
-The script needs GNU tar and builds the archive reproducibly — fixed
-timestamps, no owner, sorted entries, `gzip -n`. Identical content therefore
-yields a byte-identical file, so rebuilding without real changes does not show
-up as a diff.
+The script builds the archive reproducibly — fixed timestamps, no owner,
+sorted entries, `gzip -n`. Identical content therefore yields a byte-identical
+file, so rebuilding without real changes does not show up as a diff.
+
+That needs GNU tar: `--sort` is what pins the entry order, and bsdtar — which
+is `tar` on macOS — has no equivalent. The script looks for the first binary
+that really reports itself as GNU tar:
+
+```
+$TAR_BIN  →  gtar  →  /opt/homebrew/bin/gtar  →  /usr/local/bin/gtar  →  tar
+```
+
+So on macOS `brew install gnu-tar` is enough; the two Homebrew paths cover
+Apple Silicon and Intel. Anything else: `TAR_BIN=/path/to/gnu-tar ./pack-config.sh`.
+The chosen binary is printed in the output. One caveat: reproducibility holds
+per GNU tar version — building on two machines with different tar versions can
+still differ.
 
 ## Features
 
@@ -179,7 +193,11 @@ rm -f ~/.tmux.conf
 ```
 
 On macOS the Option key has to send Meta, otherwise none of the Alt bindings
-arrive — iTerm2: Profiles → Keys → Left Option Key → `Esc+`.
+arrive — iTerm2: Profiles → Keys → General → Left Option key `Esc+`.
+
+Leave **Right Option on `Normal`**. On a German layout Option is what types
+`~ @ | \ { } [ ]`; switching both keys to Meta takes those characters away.
+The right Option key keeps them.
 
 ## Aliases overview
 
