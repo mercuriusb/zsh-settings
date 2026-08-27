@@ -102,6 +102,9 @@ Paths in this repository mirror `$HOME` — `.zshrc` belongs at `~/.zshrc`,
 ## Structure
 
 ```
+pack-config.sh          # builds config.tgz from the three paths below
+config.tgz              # the same content as a ready-to-unpack archive
+
 ~/.zshrc                # aliases, history, completion cache, fzf-tab config
 ~/.zsh/
 ├── fzf-tab/            # fzf-powered tab completion (copy of Aloxaf/fzf-tab)
@@ -118,6 +121,28 @@ Paths in this repository mirror `$HOME` — `.zshrc` belongs at `~/.zshrc`,
 Only `*.zsh` in `~/.zsh/local/` is sourced, which is why the example is called
 `template.zsh.file` — it is ignored until you copy it to something like
 `local.zsh`.
+
+## config.tgz
+
+`config.tgz` bundles `.zshrc`, `.zsh/` and `.config/` and is committed to the
+repository, so a machine can be set up without cloning anything:
+
+```sh
+tar -xzf config.tgz -C ~
+rm -f ~/.tmux.conf        # older config, tmux would still merge it in
+exec zsh
+```
+
+Rebuild it after changing any of those files:
+
+```sh
+./pack-config.sh
+```
+
+The script needs GNU tar and builds the archive reproducibly — fixed
+timestamps, no owner, sorted entries, `gzip -n`. Identical content therefore
+yields a byte-identical file, so rebuilding without real changes does not show
+up as a diff.
 
 ## Features
 
