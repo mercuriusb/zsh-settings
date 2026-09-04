@@ -68,6 +68,16 @@ alias vi='vim'
 alias apt='sudo apt'
 export EDITOR=/usr/bin/vim
 
+# Ohne diese Zeile waehlt zsh die Tastenbelegung selbst -- und nimmt vi,
+# sobald $EDITOR oder $VISUAL die Zeichenfolge "vi" enthaelt. Genau das
+# tut die Zeile darueber, also lief die Shell im vi-Modus, ohne dass es
+# je so entschieden wurde. Dort ist ^R nicht die History-Suche, sondern
+# "redisplay" -- die Taste tut sichtbar nichts. Nachpruefen mit:
+#     bindkey -lL main        # erwartet: bindkey -e main
+#     bindkey | grep '\^R'    # erwartet: history-incremental-search-backward
+# Explizit gesetzt, damit ein geaenderter EDITOR die Tasten nicht umwirft.
+bindkey -e
+
 # ls
 alias ll='eza -la --group-directories-first --time-style "+%Y-%m-%d %H:%M:%S"'
 alias la='eza -a'

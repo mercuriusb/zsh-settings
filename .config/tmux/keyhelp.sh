@@ -163,7 +163,7 @@ collect() {
                 if (length(d) > 42) d = substr(d, 1, 39) "..."
                 if (length(p) > 15) p = substr(p, 1, 15)
 
-                printf "%-16s%s%-10s%s%-42s%s%s\n", p, TAB, q, TAB, d, TAB, real[gkey]
+                printf "%-16s%s%-14s%s%-42s%s%s\n", p, TAB, q, TAB, d, TAB, real[gkey]
             }
         }
     }
@@ -177,23 +177,32 @@ if [ "$lines" -eq 0 ]; then
     exit 1
 fi
 
-# fzf's stderr goes to a file so a rejected option is not lost when
-# the popup closes. Exit codes: 0 = picked, 1 = no match,
+# Do NOT redirect fzf's stderr here. Up to roughly 0.5x, fzf draws its
+# entire interface on stderr and only newer versions moved that to
+# /dev/tty -- so a "2> file" swallows the whole list and leaves an
+# empty popup. Measured with this exact call: 0.44.1 (the version in
+# Ubuntu 24.04) sent 16 KB of UI to the file and 170 bytes to the
+# terminal, 0.74.3 the other way round. That is why the popup was
+# empty on one machine and fine on another with identical tmux.
+# A startup error from fzf now simply stays visible in the popup,
+# which "hold" below keeps open long enough to read.
+#
+# Exit codes: 0 = picked, 1 = no match,
 # 130 = cancelled by the user, anything else = fzf itself failed.
 sel=$(fzf --delimiter="$TAB" \
           --with-nth=1,2,3 \
           --preview 'printf "%s" {4}' \
           --preview-window=down,3,wrap \
-          --header='Enter runs it  |  Esc cancels' \
+          --header='with prefix             plain           description
+Enter runs it  |  Esc cancels' \
           --prompt='Binding > ' \
-          < "$tmpd/list" 2> "$tmpd/err")
+          < "$tmpd/list")
 rc=$?
 log "fzf exit $rc"
 
 if [ "$rc" -ne 0 ] && [ "$rc" -ne 1 ] && [ "$rc" -ne 130 ]; then
-    err=$(head -3 "$tmpd/err")
-    log "fzf error: $err"
-    hold "fzf failed (exit $rc): $err"
+    log "fzf error: exit $rc (message printed above)"
+    hold "fzf failed (exit $rc) -- see the message above."
     exit 1
 fi
 

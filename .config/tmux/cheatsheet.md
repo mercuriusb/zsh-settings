@@ -18,6 +18,7 @@
 | `M-z` | Toggle zoom |
 | `M-q` | Kill pane (no confirmation) |
 | `M-H` `M-J` `M-K` `M-L` | Resize in that direction |
+| `M-S-←` `M-S-↓` `M-S-↑` `M-S-→` | The same on the arrow keys |
 
 New panes always start in the current pane's directory.
 
