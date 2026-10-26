@@ -7,28 +7,27 @@ ZSH_COMPLETIONS_DIR="$HOME/.zsh_cache"
 mkdir -p "$ZSH_COMPLETIONS_DIR"
 fpath=($ZSH_COMPLETIONS_DIR $fpath)
 
-# Completions werden nach 7 Tagen automatisch neu generiert
+# Completions are regenerated automatically after 7 days
 _generate_completion() {
   local tool=$1
   local file="$ZSH_COMPLETIONS_DIR/_${tool}"
   local max_age_days=7
 
-  # Tool vorhanden?
+  # Tool installed?
   if ! command -v "$tool" &>/dev/null; then
     return
   fi
 
-  # Neu generieren wenn Datei fehlt oder zu alt
+  # Regenerate if the file is missing or too old
   if [[ ! -f "$file" ]] || [[ $(find "$file" -mtime +${max_age_days} 2>/dev/null) ]]; then
     echo "Generating completion for $tool..."
 
-    # Erst in eine Temp-Datei schreiben und pruefen. Direkt nach "$file"
-    # umgeleitet wuerde ein fehlgeschlagener Aufruf eine leere Datei
-    # hinterlassen -- die gilt dann 7 Tage als gueltiger Cache und die
-    # Completion ist still kaputt.
-    # Punkt-Prefix: liegengebliebene Temp-Dateien wuerden sonst von
-    # compinit als Completion "_<name>" eingelesen -- der Cache-Ordner
-    # steht im fpath.
+    # Write to a temp file first and check it. Redirecting straight to
+    # "$file" would leave an empty file behind if the call fails -- that
+    # then counts as a valid cache for 7 days and completion is silently
+    # broken.
+    # Dot prefix: otherwise leftover temp files would be read by compinit
+    # as a completion "_<name>" -- the cache directory is in fpath.
     local tmp="$ZSH_COMPLETIONS_DIR/.tmp_${tool}.$$"
     if "${@:2}" > "$tmp" 2>/dev/null && [[ -s "$tmp" ]]; then
       mv -f "$tmp" "$file"
@@ -68,14 +67,14 @@ alias vi='vim'
 alias apt='sudo apt'
 export EDITOR=/usr/bin/vim
 
-# Ohne diese Zeile waehlt zsh die Tastenbelegung selbst -- und nimmt vi,
-# sobald $EDITOR oder $VISUAL die Zeichenfolge "vi" enthaelt. Genau das
-# tut die Zeile darueber, also lief die Shell im vi-Modus, ohne dass es
-# je so entschieden wurde. Dort ist ^R nicht die History-Suche, sondern
-# "redisplay" -- die Taste tut sichtbar nichts. Nachpruefen mit:
-#     bindkey -lL main        # erwartet: bindkey -e main
-#     bindkey | grep '\^R'    # erwartet: history-incremental-search-backward
-# Explizit gesetzt, damit ein geaenderter EDITOR die Tasten nicht umwirft.
+# Without this line zsh picks the keymap itself -- and chooses vi as soon
+# as $EDITOR or $VISUAL contains the string "vi". The line above does
+# exactly that, so the shell ran in vi mode without anyone deciding so.
+# There ^R is not history search but "redisplay" -- the key visibly does
+# nothing. Check with:
+#     bindkey -lL main        # expected: bindkey -e main
+#     bindkey | grep '\^R'    # expected: history-incremental-search-backward
+# Set explicitly so that a changed EDITOR does not mess up the keys.
 bindkey -e
 
 # ls
@@ -143,7 +142,7 @@ alias dcdown='docker compose down'
 alias dcps='docker compose ps'
 alias dclog='docker compose logs'
 alias dctail='docker compose logs -f'
-alias dcstatus='docker compose ls'            # 'compose status' gibt es nicht; ps steckt schon in dcps
+alias dcstatus='docker compose ls'            # 'compose status' does not exist; ps is already covered by dcps
 alias dockerrmimages='docker rmi --force $(docker images -q)'
 alias dcud='docker compose down && docker compose up -d && docker compose logs -f'
 
@@ -159,15 +158,15 @@ alias zsh-completions-refresh="rm -f $HOME/.zsh_cache/_* && source ~/.zshrc"
 autoload -Uz compinit && compinit
 
 # --- fzf-tab ---
-# Die Konfiguration steht bewusst hier und nicht in
-# .zsh/fzf-tab/fzf-tab.plugin.zsh: dort waere sie in einem Vendor-Ordner
-# versteckt und beim Neukopieren des Plugins verloren.
+# The configuration lives here on purpose, not in
+# .zsh/fzf-tab/fzf-tab.plugin.zsh: there it would be hidden in a vendored
+# folder and lost the next time the plugin is copied over from upstream.
 
-# Dateifarben fuer die Kandidatenliste. Ohne LS_COLORS bleibt list-colors
-# unten leer, fzf-tab ueberspringt dann -ftb-colorize komplett und die
-# Liste ist einfarbig -- waehrend die eza-Vorschau daneben bunt ist.
-# Achtung: GNU-Standardpalette, passt nicht zum Dracula-Theme in
-# .zsh/eza/theme.yml. Fuer gleiche Farben LS_COLORS von Hand setzen.
+# File colors for the candidate list. Without LS_COLORS, list-colors below
+# stays empty, fzf-tab then skips -ftb-colorize entirely and the list is
+# monochrome -- while the eza preview next to it is colored.
+# Caution: GNU default palette, does not match the Dracula theme in
+# .zsh/eza/theme.yml. Set LS_COLORS by hand for matching colors.
 (( $+commands[dircolors] )) && eval "$(dircolors -b)"
 
 # disable sort when completing `git checkout`
@@ -181,29 +180,29 @@ zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 zstyle ':completion:*' menu no
 # preview directory's content with eza when completing cd
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
-# Tab akzeptiert direkt. Ohne Farb-Flags -- der README-Beispielblock
-# setzte hier --color=fg:1,fg+:2 (rot mit gruener Auswahl), das war nur
-# eine Demo. So nutzt fzf seine Standardfarben.
+# Tab accepts directly. No color flags -- the README example block set
+# --color=fg:1,fg+:2 here (red with green selection), that was only a
+# demo. This way fzf uses its default colors.
 zstyle ':fzf-tab:*' fzf-flags --bind=tab:accept
 # To make fzf-tab follow FZF_DEFAULT_OPTS.
 # NOTE: This may lead to unexpected behavior since some flags break this plugin. See Aloxaf/fzf-tab#455.
 zstyle ':fzf-tab:*' use-fzf-default-opts yes
 # switch group using `<` and `>`
 zstyle ':fzf-tab:*' switch-group '<' '>'
-# Completion im tmux-Popup; ausserhalb von tmux faellt ftb-tmux-popup
-# selbsttaetig auf normales fzf zurueck
+# Completion in a tmux popup; outside tmux, ftb-tmux-popup falls back to
+# plain fzf on its own
 zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
 
-# Das Popup bemisst seine Breite am laengsten Eintrag (comp_length + 5 in
-# lib/ftb-tmux-popup). Bei cd frisst die eza-Vorschau davon die Haelfte,
-# dann werden Verzeichnisnamen abgeschnitten. Untergrenze dagegen setzen --
-# der Wert wird auf die Fenstergroesse gedeckelt, zu gross schadet nicht.
+# The popup sizes its width by the longest entry (comp_length + 5 in
+# lib/ftb-tmux-popup). With cd the eza preview eats half of that, so
+# directory names get cut off. Set a lower bound against that -- the value
+# is capped at the window size, so too large does no harm.
 zstyle ':fzf-tab:*' popup-min-size 70 20
 
-# Vorschau schmaler, damit mehr Platz fuer die Namen bleibt.
-# Achtung: zstyle vereinigt Patterns nicht -- das spezifischere ersetzt das
-# allgemeinere komplett. --bind=tab:accept von oben muss deshalb mit rein,
-# sonst geht es ausgerechnet bei cd verloren.
+# Narrower preview to leave more room for the names.
+# Caution: zstyle does not merge patterns -- the more specific one replaces
+# the more general one completely. So --bind=tab:accept from above has to
+# be repeated here, otherwise it gets lost for cd of all places.
 zstyle ':fzf-tab:complete:cd:*' fzf-flags --bind=tab:accept --preview-window=right,40%
 
 source $ZSH/fzf-tab/fzf-tab.plugin.zsh
