@@ -93,6 +93,8 @@ prompt_context() {
 prompt_git() {
   local color ref
   is_dirty() {
+    # inside .git there is no work tree; git status would fail there
+    [[ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" == true ]] || return 1
     test -n "$(git status --porcelain --ignore-submodules)"
   }
   ref="$vcs_info_msg_0_"
